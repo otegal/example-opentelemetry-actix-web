@@ -33,14 +33,19 @@ async fn hello() -> impl Responder {
 }
 
 async fn sleep() -> actix_web::Result<HttpResponse> {
-    tracing::info_span!("Sleeping...");
-    wait().await;
+    let span = tracing::info_span!("Sleep");
+    span.in_scope(|| wait());
     tracing::info_span!("awake!");
+
+    let span = tracing::info_span!("Sleep again");
+    span.in_scope(|| wait());
+    tracing::info_span!("awake again!");
+
     Ok(HttpResponse::Ok().body("Done"))
 }
 
-async fn wait() {
-    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+fn wait() {
+    std::thread::sleep(std::time::Duration::from_secs(2));
 }
 
 fn init_tracer() -> std::io::Result<()> {
