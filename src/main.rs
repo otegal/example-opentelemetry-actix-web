@@ -17,7 +17,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(hello)
-            .service(echo)
+            .route("/sleep", actix_web::web::get().to(sleep))
             .wrap(TracingLogger::default())
     })
     .bind(("0.0.0.0", 8081))?
@@ -32,9 +32,15 @@ async fn hello() -> impl Responder {
     HttpResponse::Ok().body("Hello everyone!")
 }
 
-#[get("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+async fn sleep() -> actix_web::Result<HttpResponse> {
+    tracing::info_span!("Sleeping...");
+    wait().await;
+    tracing::info_span!("awake!");
+    Ok(HttpResponse::Ok().body("Done"))
+}
+
+async fn wait() {
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 }
 
 fn init_tracer() -> std::io::Result<()> {
